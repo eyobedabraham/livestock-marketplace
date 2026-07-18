@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Listing</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:Arial,sans-serif; background:#f5f5f5; padding-bottom:60px; }
+        .header { background:#2d3748; color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; }
+        .header a { color:white; text-decoration:none; }
+        .header h1 { font-size:18px; }
+        .container { max-width:600px; margin:0 auto; padding:15px; }
+        .form-card { background:white; border-radius:10px; padding:20px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom:15px; }
+        .form-group label { display:block; font-weight:bold; color:#2d3748; margin-bottom:5px; font-size:14px; }
+        .form-group input, .form-group select, .form-group textarea { width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; font-size:16px; }
+        .form-group textarea { min-height:80px; resize:vertical; }
+        .submit-btn { width:100%; padding:15px; background:#4299e1; color:white; border:none; border-radius:5px; font-size:18px; font-weight:bold; cursor:pointer; }
+        .submit-btn:hover { background:#3182ce; }
+        .dairy-fields { background:#ebf8ff; padding:15px; border-radius:8px; margin-top:10px; display:none; }
+        .dairy-fields.show { display:block; }
+        .flash { background:#fed7d7; color:#c53030; padding:12px; border-radius:8px; margin-bottom:15px; }
+        .current-photo { margin:10px 0; padding:10px; background:#f7fafc; border-radius:5px; }
+        .current-photo img { max-width:100%; max-height:150px; border-radius:5px; }
+        .required { color:#e53e3e; }
+        .photo-section { background:#f7fafc; padding:15px; border-radius:8px; margin-bottom:15px; }
+        .photo-section h4 { color:#2d3748; margin-bottom:10px; font-size:16px; }
+        .photo-section .form-group { margin-bottom:10px; }
+        .photo-section .form-group:last-child { margin-bottom:0; }
+        .home-btn { background:#48bb78; color:white; padding:8px 16px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:14px; }
+        .home-btn:hover { background:#38a169; }
+        .back-link { color:white; text-decoration:none; font-size:20px; margin-right:10px; }
+        .header-left { display:flex; align-items:center; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <a href="/admin/dashboard" class="back-link">←</a>
+            <h1>Edit Listing</h1>
+        </div>
+        <a href="/" class="home-btn">🏠 Home</a>
+    </div>
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}
+        {% endwith %}
+        <div class="form-card">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Title <span class="required">*</span></label>
+                    <input type="text" name="title" value="{{ listing.title }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Category <span class="required">*</span></label>
+                    <select name="category" id="category" required onchange="toggleDairyFields()">
+                        <option value="cow" {% if listing.category == 'cow' %}selected{% endif %}>🐄 Cow</option>
+                        <option value="ox" {% if listing.category == 'ox' %}selected{% endif %}>🐂 Ox</option>
+                        <option value="goat" {% if listing.category == 'goat' %}selected{% endif %}>🐐 Goat</option>
+                        <option value="sheep" {% if listing.category == 'sheep' %}selected{% endif %}>🐑 Sheep</option>
+                        <option value="dairy" {% if listing.category == 'dairy' %}selected{% endif %}>🥛 Dairy Product</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Breed</label>
+                    <input type="text" name="breed" value="{{ listing.breed or '' }}">
+                </div>
+                <div class="form-group">
+                    <label>Gender</label>
+                    <select name="gender">
+                        <option value="">Select</option>
+                        <option value="Male" {% if listing.gender == 'Male' %}selected{% endif %}>Male</option>
+                        <option value="Female" {% if listing.gender == 'Female' %}selected{% endif %}>Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Age (years)</label>
+                    <input type="number" name="age" step="0.5" value="{{ listing.age or '' }}">
+                </div>
+                <div class="form-group">
+                    <label>Weight (kg)</label>
+                    <input type="number" name="weight" step="0.1" value="{{ listing.weight or '' }}">
+                </div>
+                <div class="form-group">
+                    <label>Height (cm) - Optional</label>
+                    <input type="number" name="height" step="0.1" value="{{ listing.height or '' }}">
+                </div>
+                <div class="form-group">
+                    <label>Price (ETB) <span class="required">*</span></label>
+                    <input type="number" name="price" step="0.01" value="{{ listing.price }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Location <span class="required">*</span></label>
+                    <select name="location" required>
+                        <option value="Addis Ababa" {% if listing.location == 'Addis Ababa' %}selected{% endif %}>Addis Ababa</option>
+                        <option value="Dire Dawa" {% if listing.location == 'Dire Dawa' %}selected{% endif %}>Dire Dawa</option>
+                        <option value="Adama" {% if listing.location == 'Adama' %}selected{% endif %}>Adama</option>
+                        <option value="Hawassa" {% if listing.location == 'Hawassa' %}selected{% endif %}>Hawassa</option>
+                        <option value="Sululta" {% if listing.location == 'Sululta' %}selected{% endif %}>Sululta</option>
+                        <option value="Other" {% if listing.location == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                <!-- Photos -->
+                <div class="photo-section">
+                    <h4>📸 Photos</h4>
+                    <div class="form-group">
+                        <label>Main Photo</label>
+                        <input type="file" name="photo" accept="image/*">
+                        {% if listing.photo %}<div class="current-photo"><p style="font-size:13px;color:#718096;margin-bottom:5px;">Current:</p><img src="{{ url_for('static', filename='uploads/' + listing.photo) }}" alt="Main"></div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label>Side View</label>
+                        <input type="file" name="photo_side" accept="image/*">
+                        {% if listing.photo_side %}<div class="current-photo"><p style="font-size:13px;color:#718096;margin-bottom:5px;">Current:</p><img src="{{ url_for('static', filename='uploads/' + listing.photo_side) }}" alt="Side"></div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label>Front View</label>
+                        <input type="file" name="photo_front" accept="image/*">
+                        {% if listing.photo_front %}<div class="current-photo"><p style="font-size:13px;color:#718096;margin-bottom:5px;">Current:</p><img src="{{ url_for('static', filename='uploads/' + listing.photo_front) }}" alt="Front"></div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label>Top View</label>
+                        <input type="file" name="photo_top" accept="image/*">
+                        {% if listing.photo_top %}<div class="current-photo"><p style="font-size:13px;color:#718096;margin-bottom:5px;">Current:</p><img src="{{ url_for('static', filename='uploads/' + listing.photo_top) }}" alt="Top"></div>{% endif %}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description">{{ listing.description or '' }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Health Status</label>
+                    <select name="health_status">
+                        <option value="Healthy" {% if listing.health_status == 'Healthy' %}selected{% endif %}>Healthy</option>
+                        <option value="Not Healthy" {% if listing.health_status == 'Not Healthy' %}selected{% endif %}>Not Healthy</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Vaccinated</label>
+                    <select name="vaccinated">
+                        <option value="No" {% if listing.vaccinated == 'No' %}selected{% endif %}>No</option>
+                        <option value="Yes" {% if listing.vaccinated == 'Yes' %}selected{% endif %}>Yes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Your Phone Number</label>
+                    <input type="text" name="phone_number" value="{{ listing.phone_number or '0940293477' }}">
+                </div>
+                <div id="dairy-fields" class="dairy-fields {% if listing.category == 'cow' %}show{% endif %}">
+                    <h3 style="color:#2b6cb0;margin-bottom:10px;">🥛 Dairy Cow Details</h3>
+                    <div class="form-group">
+                        <label>Milk Production (L/day)</label>
+                        <input type="number" name="milk_production" step="0.1" value="{{ listing.milk_production or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Feed Type</label>
+                        <input type="text" name="feed_type" value="{{ listing.feed_type or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Feed Amount (kg/day)</label>
+                        <input type="number" name="feed_amount" step="0.1" value="{{ listing.feed_amount or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Lactating</label>
+                        <select name="lactating">
+                            <option value="No" {% if listing.lactating == 'No' %}selected{% endif %}>No</option>
+                            <option value="Yes" {% if listing.lactating == 'Yes' %}selected{% endif %}>Yes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Pregnant</label>
+                        <select name="pregnant">
+                            <option value="No" {% if listing.pregnant == 'No' %}selected{% endif %}>No</option>
+                            <option value="Yes" {% if listing.pregnant == 'Yes' %}selected{% endif %}>Yes</option>
+                            <option value="Unknown" {% if listing.pregnant == 'Unknown' %}selected{% endif %}>Unknown</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn">💾 Update Listing</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        function toggleDairyFields() {
+            var category = document.getElementById('category').value;
+            var dairyFields = document.getElementById('dairy-fields');
+            dairyFields.classList.toggle('show', category === 'cow');
+        }
+        toggleDairyFields();
+    </script>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ listing.title }} - Livestock Marketplace</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:Arial,sans-serif; background:#f5f5f5; padding-top:80px; padding-bottom:80px; overflow-x:hidden; }
+
+        /* Fixed Header with Scroll Hide */
+        .header {
+            background: #2d3748;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        .header.hidden {
+            transform: translateY(-100%);
+        }
+        .header-left h1 { font-size:20px; }
+        .header-left p { font-size:12px; opacity:0.8; margin-top:2px; }
+        .home-btn { background:#48bb78; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:14px; }
+        .home-btn:hover { background:#38a169; }
+
+        .container { max-width:600px; margin:0 auto; padding:15px; }
+
+        .main-image-container { width:100%; background:#e2e8f0; border-radius:10px; overflow:hidden; cursor:pointer; position:relative; }
+        .main-image-container img { width:100%; height:350px; object-fit:cover; display:block; }
+        .main-image-container .placeholder { width:100%; height:350px; display:flex; align-items:center; justify-content:center; font-size:80px; color:#a0aec0; background:#e2e8f0; }
+        .click-hint { position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:5px 12px; border-radius:20px; font-size:12px; pointer-events:none; }
+
+        .thumbnail-gallery { display:flex; gap:10px; margin-top:10px; overflow-x:auto; padding-bottom:5px; flex-wrap:nowrap; }
+        .thumbnail-gallery .thumb { width:80px; height:80px; min-width:80px; object-fit:cover; border-radius:8px; cursor:pointer; border:3px solid transparent; transition:border 0.2s; background:#e2e8f0; }
+        .thumbnail-gallery .thumb.active, .thumbnail-gallery .thumb:hover { border-color:#48bb78; }
+        .thumbnail-gallery .thumb-placeholder { width:80px; height:80px; min-width:80px; border-radius:8px; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-size:30px; color:#a0aec0; }
+
+        .listing-card { background:white; border-radius:10px; padding:20px; margin-top:15px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+        .listing-card h2 { color:#2d3748; font-size:24px; margin-bottom:5px; }
+        .price { color:#48bb78; font-size:28px; font-weight:bold; margin:10px 0; }
+        .location { color:#718096; font-size:16px; margin-bottom:10px; }
+        .specs-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:15px 0; }
+        .spec-item { background:#f7fafc; padding:10px; border-radius:8px; }
+        .spec-item .label { font-size:12px; color:#a0aec0; text-transform:uppercase; }
+        .spec-item .value { font-size:16px; color:#2d3748; font-weight:500; }
+        .description { margin-top:15px; padding-top:15px; border-top:1px solid #e2e8f0; }
+        .description h3 { color:#2d3748; margin-bottom:8px; font-size:16px; }
+        .description p { color:#4a5568; line-height:1.8; white-space:pre-wrap; }
+        .back-link { display:inline-block; margin-top:15px; color:#2d3748; text-decoration:none; padding:8px 15px; background:#edf2f7; border-radius:5px; }
+        .back-link:hover { background:#e2e8f0; }
+        .badge { display:inline-block; padding:3px 12px; border-radius:20px; font-size:13px; font-weight:500; }
+        .badge-healthy { background:#c6f6d5; color:#22543d; }
+        .badge-not-healthy { background:#fed7d7; color:#9b2c2c; }
+        .badge-vaccinated { background:#bee3f8; color:#2a69ac; }
+        .badge-not-vaccinated { background:#fed7d7; color:#9b2c2c; }
+        .dairy-section { background:#ebf8ff; padding:15px; border-radius:8px; margin-top:15px; }
+        .dairy-section h4 { color:#2b6cb0; margin-bottom:8px; }
+        .call-btn { display:inline-block; background:#48bb78; color:white; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:bold; margin:10px 0; }
+        .call-btn:hover { background:#38a169; }
+
+        /* Modal styles */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; justify-content:center; align-items:center; flex-direction:column; padding:20px; }
+        .modal.show { display:flex; }
+        .modal .close-btn { position:absolute; top:20px; right:30px; color:white; font-size:40px; cursor:pointer; z-index:10000; background:none; border:none; font-weight:bold; }
+        .modal .close-btn:hover { color:#fc8181; }
+        .modal .modal-image { max-width:95%; max-height:75vh; object-fit:contain; border-radius:8px; box-shadow:0 4px 30px rgba(0,0,0,0.5); }
+        .modal .modal-thumbnails { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; justify-content:center; }
+        .modal .modal-thumbnails img { width:60px; height:60px; object-fit:cover; border-radius:6px; cursor:pointer; border:2px solid transparent; transition:border 0.2s; }
+        .modal .modal-thumbnails img:hover, .modal .modal-thumbnails img.active { border-color:#48bb78; }
+        .modal .download-btn { position:absolute; bottom:30px; right:30px; background:#48bb78; color:white; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:bold; z-index:10000; }
+        .modal .download-btn:hover { background:#38a169; }
+        .modal .photo-counter { position:absolute; bottom:30px; left:30px; color:rgba(255,255,255,0.7); font-size:14px; z-index:10000; }
+        .modal .nav-btn { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.2); color:white; border:none; font-size:40px; padding:15px 20px; cursor:pointer; border-radius:8px; z-index:10000; transition:background 0.2s; }
+        .modal .nav-btn:hover { background:rgba(255,255,255,0.4); }
+        .modal .nav-btn.prev { left:20px; }
+        .modal .nav-btn.next { right:20px; }
+        @media (max-width:600px) {
+            .modal .nav-btn { font-size:24px; padding:10px 12px; }
+            .modal .nav-btn.prev { left:5px; }
+            .modal .nav-btn.next { right:5px; }
+            .modal .modal-image { max-height:60vh; }
+            .modal .download-btn { bottom:10px; right:10px; padding:8px 16px; font-size:12px; }
+            .modal .photo-counter { bottom:10px; left:10px; font-size:12px; }
+            .modal .close-btn { top:10px; right:15px; font-size:30px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header" id="mainHeader">
+        <div class="header-left"><h1>🐄 Livestock & Dairy</h1><p>Ethiopia's Marketplace</p></div>
+        <a href="/" class="home-btn">🏠 Home</a>
+    </div>
+
+    <div class="container">
+        <!-- Main Image -->
+        <div class="main-image-container" onclick="openModal(0)">
+            {% if listing.photo %}
+                <img src="{{ url_for('static', filename='uploads/' + listing.photo) }}" alt="{{ listing.title }}" id="mainImage">
+                <div class="click-hint">🔍 Click to enlarge</div>
+            {% else %}
+                <div class="placeholder">📷</div>
+            {% endif %}
+        </div>
+
+        <!-- Thumbnails -->
+        <div class="thumbnail-gallery" id="thumbnailGallery">
+            {% if listing.photo %}
+                <img src="{{ url_for('static', filename='uploads/' + listing.photo) }}" class="thumb active" onclick="changeMainImage(this.src, this, 0)" alt="Main" data-index="0">
+            {% else %}
+                <div class="thumb-placeholder">📷</div>
+            {% endif %}
+            {% if listing.photo_side %}
+                <img src="{{ url_for('static', filename='uploads/' + listing.photo_side) }}" class="thumb" onclick="changeMainImage(this.src, this, 1)" alt="Side" data-index="1">
+            {% endif %}
+            {% if listing.photo_front %}
+                <img src="{{ url_for('static', filename='uploads/' + listing.photo_front) }}" class="thumb" onclick="changeMainImage(this.src, this, 2)" alt="Front" data-index="2">
+            {% endif %}
+            {% if listing.photo_top %}
+                <img src="{{ url_for('static', filename='uploads/' + listing.photo_top) }}" class="thumb" onclick="changeMainImage(this.src, this, 3)" alt="Top" data-index="3">
+            {% endif %}
+        </div>
+
+        <div class="listing-card">
+            <h2>{{ listing.title }}</h2>
+            <div class="price">ETB {{ "%.2f"|format(listing.price) }}</div>
+            <div class="location">📍 {{ listing.location }}</div>
+            <a href="tel:+251940293477" class="call-btn">📞 Call Seller</a>
+            <div class="specs-grid">
+                <div class="spec-item"><div class="label">Category</div><div class="value">{{ listing.category|capitalize }}</div></div>
+                {% if listing.breed %}<div class="spec-item"><div class="label">Breed</div><div class="value">{{ listing.breed }}</div></div>{% endif %}
+                {% if listing.gender %}<div class="spec-item"><div class="label">Gender</div><div class="value">{{ listing.gender }}</div></div>{% endif %}
+                {% if listing.age %}<div class="spec-item"><div class="label">Age</div><div class="value">{{ listing.age }} years</div></div>{% endif %}
+                {% if listing.weight %}<div class="spec-item"><div class="label">Weight</div><div class="value">{{ listing.weight }} kg</div></div>{% endif %}
+                {% if listing.height %}<div class="spec-item"><div class="label">Height</div><div class="value">{{ listing.height }} cm</div></div>{% endif %}
+                <div class="spec-item"><div class="label">Health</div><div class="value"><span class="badge badge-{% if listing.health_status == 'Healthy' %}healthy{% else %}not-healthy{% endif %}">{{ listing.health_status }}</span></div></div>
+                <div class="spec-item"><div class="label">Vaccinated</div><div class="value"><span class="badge badge-{% if listing.vaccinated == 'Yes' %}vaccinated{% else %}not-vaccinated{% endif %}">{{ listing.vaccinated }}</span></div></div>
+            </div>
+            {% if listing.category == 'cow' and listing.milk_production %}
+            <div class="dairy-section">
+                <h4>🥛 Dairy Details</h4>
+                <div class="specs-grid">
+                    {% if listing.milk_production %}<div class="spec-item"><div class="label">Milk Production</div><div class="value">{{ listing.milk_production }} L/day</div></div>{% endif %}
+                    {% if listing.feed_type %}<div class="spec-item"><div class="label">Feed Type</div><div class="value">{{ listing.feed_type }}</div></div>{% endif %}
+                    {% if listing.feed_amount %}<div class="spec-item"><div class="label">Feed Amount</div><div class="value">{{ listing.feed_amount }} kg/day</div></div>{% endif %}
+                    {% if listing.lactating %}<div class="spec-item"><div class="label">Lactating</div><div class="value">{{ listing.lactating }}</div></div>{% endif %}
+                    {% if listing.pregnant %}<div class="spec-item"><div class="label">Pregnant</div><div class="value">{{ listing.pregnant }}</div></div>{% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% if listing.description %}
+            <div class="description">
+                <h3>📝 Description</h3>
+                <p>{{ listing.description }}</p>
+            </div>
+            {% endif %}
+            <a href="/" class="back-link">← Back to Listings</a>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="imageModal">
+        <button class="close-btn" onclick="closeModal()">✕</button>
+        <button class="nav-btn prev" onclick="changeModalImage(-1)">◀</button>
+        <button class="nav-btn next" onclick="changeModalImage(1)">▶</button>
+        <img class="modal-image" id="modalImage" src="">
+        <div class="modal-thumbnails" id="modalThumbnails"></div>
+        <a class="download-btn" id="downloadBtn" href="#" download>💾 Download</a>
+        <div class="photo-counter" id="photoCounter">1 / 1</div>
+    </div>
+
+    <script>
+        // Build photo array from server-side data
+        var photos = [];
+        {% if listing.photo %}
+        photos.push({ src: "{{ url_for('static', filename='uploads/' + listing.photo) }}", label: "Main" });
+        {% endif %}
+        {% if listing.photo_side %}
+        photos.push({ src: "{{ url_for('static', filename='uploads/' + listing.photo_side) }}", label: "Side" });
+        {% endif %}
+        {% if listing.photo_front %}
+        photos.push({ src: "{{ url_for('static', filename='uploads/' + listing.photo_front) }}", label: "Front" });
+        {% endif %}
+        {% if listing.photo_top %}
+        photos.push({ src: "{{ url_for('static', filename='uploads/' + listing.photo_top) }}", label: "Top" });
+        {% endif %}
+
+        var currentModalIndex = 0;
+
+        function changeMainImage(src, thumbElement, index) {
+            var mainImg = document.getElementById('mainImage');
+            if (mainImg) mainImg.src = src;
+            document.querySelectorAll('.thumbnail-gallery .thumb').forEach(t => t.classList.remove('active'));
+            if (thumbElement) thumbElement.classList.add('active');
+            currentModalIndex = index;
+        }
+
+        function openModal(index) {
+            if (photos.length === 0) return;
+            currentModalIndex = index || 0;
+            var modal = document.getElementById('imageModal');
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            updateModalImage();
+            var container = document.getElementById('modalThumbnails');
+            container.innerHTML = '';
+            photos.forEach((p, i) => {
+                var img = document.createElement('img');
+                img.src = p.src;
+                img.alt = p.label;
+                img.onclick = function() { currentModalIndex = i; updateModalImage(); };
+                if (i === currentModalIndex) img.classList.add('active');
+                container.appendChild(img);
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
+        function updateModalImage() {
+            var modalImg = document.getElementById('modalImage');
+            modalImg.src = photos[currentModalIndex].src;
+            modalImg.alt = photos[currentModalIndex].label;
+            document.getElementById('photoCounter').textContent = (currentModalIndex + 1) + ' / ' + photos.length;
+            document.getElementById('downloadBtn').href = photos[currentModalIndex].src;
+            document.querySelectorAll('#modalThumbnails img').forEach((t, i) => t.classList.toggle('active', i === currentModalIndex));
+            document.querySelectorAll('.thumbnail-gallery .thumb').forEach((t, i) => {
+                if (i < photos.length) t.classList.toggle('active', i === currentModalIndex);
+            });
+        }
+
+        function changeModalImage(direction) {
+            if (photos.length === 0) return;
+            currentModalIndex = (currentModalIndex + direction + photos.length) % photos.length;
+            updateModalImage();
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (document.getElementById('imageModal').classList.contains('show')) {
+                if (e.key === 'Escape') closeModal();
+                else if (e.key === 'ArrowLeft') changeModalImage(-1);
+                else if (e.key === 'ArrowRight') changeModalImage(1);
+            }
+        });
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Hide/show header on scroll
+        let lastScrollTop = 0;
+        const header = document.getElementById('mainHeader');
+
+        window.addEventListener('scroll', function() {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollTop > lastScrollTop && scrollTop > 50) {
+                header.classList.add('hidden');
+            } else {
+                header.classList.remove('hidden');
+            }
+            lastScrollTop = scrollTop;
+        });
+    </script>
+</body>
+</html>

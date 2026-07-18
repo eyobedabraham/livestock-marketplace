@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Livestock & Dairy Marketplace - Ethiopia</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:Arial,sans-serif; background:#f5f5f5; padding-top:80px; padding-bottom:60px; }
+        .header {
+            background: #2d3748;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        .header.hidden {
+            transform: translateY(-100%);
+        }
+        .header h1 { font-size:22px; }
+        .header p { font-size:14px; opacity:0.8; margin-top:5px; }
+        .home-btn { background:#48bb78; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; }
+        .home-btn:hover { background:#38a169; }
+        .container { max-width:600px; margin:0 auto; padding:15px; }
+        .search-box { background:white; padding:15px; border-radius:10px; margin-bottom:20px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+        .search-box input, .search-box select { width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px; font-size:16px; }
+        .search-box button { width:100%; padding:10px; background:#48bb78; color:white; border:none; border-radius:5px; font-size:16px; cursor:pointer; }
+        .search-box button:hover { background:#38a169; }
+        .filters { display:flex; gap:10px; flex-wrap:wrap; }
+        .filters select { flex:1; min-width:100px; }
+        .listing-grid { display:grid; gap:15px; }
+        .listing-card { background:white; border-radius:10px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:transform 0.2s; }
+        .listing-card:hover { transform:translateY(-3px); }
+        .listing-card img { width:100%; height:200px; object-fit:cover; background:#e2e8f0; }
+        .listing-card .info { padding:15px; }
+        .listing-card .info h3 { color:#2d3748; font-size:18px; margin-bottom:5px; }
+        .listing-card .info .price { color:#48bb78; font-size:20px; font-weight:bold; }
+        .listing-card .info .location { color:#718096; font-size:14px; margin:5px 0; }
+        .listing-card .info .specs { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+        .listing-card .info .specs span { background:#edf2f7; padding:3px 10px; border-radius:15px; font-size:12px; color:#2d3748; }
+        .listing-card .info .view-btn { display:inline-block; margin-top:10px; padding:8px 20px; background:#2d3748; color:white; text-decoration:none; border-radius:5px; font-size:14px; }
+        .listing-card .info .view-btn:hover { background:#1a202c; }
+        .no-listings { text-align:center; padding:40px; color:#718096; }
+        .admin-link { position:fixed; bottom:20px; right:20px; background:#2d3748; color:white; padding:10px 15px; border-radius:50px; text-decoration:none; font-size:14px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:200; }
+        .admin-link:hover { background:#1a202c; }
+    </style>
+</head>
+<body>
+    <div class="header" id="mainHeader">
+        <div><h1>🐄 Livestock & Dairy</h1><p>Ethiopia's Marketplace</p></div>
+        <a href="/" class="home-btn">🏠 Home</a>
+    </div>
+
+    <div class="container">
+        <div class="search-box">
+            <form method="GET" action="/">
+                <input type="text" name="search" placeholder="Search by title, breed, or location..." value="{{ request.args.get('search', '') }}">
+                <div class="filters">
+                    <select name="category">
+                        <option value="">All Categories</option>
+                        <option value="cow" {% if request.args.get('category') == 'cow' %}selected{% endif %}>🐄 Cow</option>
+                        <option value="ox" {% if request.args.get('category') == 'ox' %}selected{% endif %}>🐂 Ox</option>
+                        <option value="goat" {% if request.args.get('category') == 'goat' %}selected{% endif %}>🐐 Goat</option>
+                        <option value="sheep" {% if request.args.get('category') == 'sheep' %}selected{% endif %}>🐑 Sheep</option>
+                        <option value="dairy" {% if request.args.get('category') == 'dairy' %}selected{% endif %}>🥛 Dairy</option>
+                    </select>
+                </div>
+                <button type="submit">🔍 Search</button>
+            </form>
+        </div>
+
+        <div class="listing-grid">
+            {% if listings %}
+                {% for listing in listings %}
+                <div class="listing-card">
+                    {% if listing.photo %}
+                        <img src="{{ url_for('static', filename='uploads/' + listing.photo) }}" alt="{{ listing.title }}">
+                    {% else %}
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' font-size='40' text-anchor='middle' dy='.3em' fill='%23a0aec0'%3E📷%3C/text%3E%3C/svg%3E" alt="No photo">
+                    {% endif %}
+                    <div class="info">
+                        <h3>{{ listing.title }}</h3>
+                        <div class="price">ETB {{ "%.2f"|format(listing.price) }}</div>
+                        <div class="location">📍 {{ listing.location }}</div>
+                        <div class="specs">
+                            {% if listing.category %}<span>{{ listing.category|capitalize }}</span>{% endif %}
+                            {% if listing.breed %}<span>{{ listing.breed }}</span>{% endif %}
+                            {% if listing.age %}<span>{{ listing.age }} years</span>{% endif %}
+                            {% if listing.weight %}<span>{{ listing.weight }} kg</span>{% endif %}
+                        </div>
+                        <a href="{{ url_for('listing_detail', id=listing.id) }}" class="view-btn">View Details</a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-listings"><h3>No listings available yet</h3><p>Check back soon!</p></div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if current_user.is_authenticated %}
+        <a href="/admin/dashboard" class="admin-link">⚙️ Admin</a>
+    {% endif %}
+
+    <script>
+        // Auto-submit on category change
+        document.querySelector('select[name="category"]')?.addEventListener('change', function() { this.form.submit(); });
+
+        // Hide/show header on scroll
+        let lastScrollTop = 0;
+        const header = document.getElementById('mainHeader');
+
+        window.addEventListener('scroll', function() {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollTop > lastScrollTop && scrollTop > 50) {
+                header.classList.add('hidden');
+            } else {
+                header.classList.remove('hidden');
+            }
+            lastScrollTop = scrollTop;
+        });
+    </script>
+</body>
+</html>
